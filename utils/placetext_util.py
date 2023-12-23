@@ -6,52 +6,6 @@ from .polygon_util import polygon_area, get_top_point
 from .textsearch_util import noisy_words, calculate_sim_score
 
 
-
-def filter_by_area(img, texts, boxes, scores, recs):
-    noisy_text = ["sale", "cafe", "harajuku"]
-    fl_boxes, fl_texts, fl_scores, fl_recs = [], [], [],[]
-    for i in range(len(boxes)):
-        if texts[i].lower() in noisy_text:
-            continue
-        boxes[i] = boxes[i].tolist() if not isinstance(boxes[i], list) else boxes[i]
-        area_score = (polygon_area(boxes[i])/img.size)*1000
-        if area_score >= 0.1:
-            fl_boxes.append(boxes[i])
-            fl_texts.append(texts[i])
-            fl_scores.append(scores[i])
-            fl_recs.append(recs[i])
-    assert len(fl_texts) == len(fl_boxes) == len(fl_scores) == len(fl_recs)
-    return fl_texts, fl_boxes, fl_scores, fl_recs
-
-def draw_text(img, text,
-          font=cv2.FONT_HERSHEY_PLAIN,
-          pos=(0, 0),
-          font_scale=3,
-          font_thickness=2,
-          text_color=(0, 255, 0),
-          text_color_bg=(0, 0, 0)
-          ):
-
-    x, y = pos
-    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
-    text_w, text_h = text_size
-    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
-    cv2.putText(img, text, (x, y + text_h + font_scale - 1), font, font_scale, text_color, font_thickness)
-
-    return text_size
-
-def visualize_tois(texts, boxes, sidx, img, N):
-    toi_text = []
-    for i, (poly,txt) in enumerate(zip(boxes, texts)):
-            if i in sidx[:min(N,len(sidx))]: #top x
-                cv2.polylines(img,[poly], True, (255,255,255), 2) #20
-                cv2.polylines(img,[poly], True, (0,0,0), 1) #2
-                #cv2.putText(img, text=txt, org=(poly[0,0], poly[0,1]),fontFace=cv2.FONT_HERSHEY_TRIPLEX , fontScale=font_size, color=(255,0,0), thickness=4, lineType=cv2.LINE_AA)
-                idx = get_top_point(poly)
-                draw_text(img, text=txt, font=cv2.FONT_HERSHEY_TRIPLEX, pos=(poly[idx,0], poly[idx,1]),font_scale=1,font_thickness=2, text_color=(0, 0, 0),text_color_bg=(255, 255, 255))
-                toi_text.append(txt)
-    return img, toi_text
-
 def process_text_of_interest(img, boxes, texts, unit='region', N=5, txt_tk=2, txt_scale=1):
     toi_text = []
     if unit == None or unit == 'word':
@@ -90,7 +44,6 @@ def get_toi_all_units(img, polygons, decoded_txts):
         #toi_texts = [' '.join(ls) for ls in toi_texts] if unit == 'region' else toi_texts
         all_toi_texts.extend(toi_texts)
     return all_toi_texts
-
 
 
 def get_toi_tops(place_texts, toi_texts, K=3, sim_cutoff=0.5):
@@ -157,4 +110,47 @@ def get_final_top(top_matches, K=3):
     return final_top
 
 
+def visualize_tois(texts, boxes, sidx, img, N):
+    toi_text = []
+    for i, (poly,txt) in enumerate(zip(boxes, texts)):
+            if i in sidx[:min(N,len(sidx))]: #top x
+                cv2.polylines(img,[poly], True, (255,255,255), 2) #20
+                cv2.polylines(img,[poly], True, (0,0,0), 1) #2
+                #cv2.putText(img, text=txt, org=(poly[0,0], poly[0,1]),fontFace=cv2.FONT_HERSHEY_TRIPLEX , fontScale=font_size, color=(255,0,0), thickness=4, lineType=cv2.LINE_AA)
+                idx = get_top_point(poly)
+                draw_text(img, text=txt, font=cv2.FONT_HERSHEY_TRIPLEX, pos=(poly[idx,0], poly[idx,1]),font_scale=1,font_thickness=2, text_color=(0, 0, 0),text_color_bg=(255, 255, 255))
+                toi_text.append(txt)
+    return img, toi_text
 
+def draw_text(img, text,
+          font=cv2.FONT_HERSHEY_PLAIN,
+          pos=(0, 0),
+          font_scale=3,
+          font_thickness=2,
+          text_color=(0, 255, 0),
+          text_color_bg=(0, 0, 0)
+          ):
+
+    x, y = pos
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+    text_w, text_h = text_size
+    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
+    cv2.putText(img, text, (x, y + text_h + font_scale - 1), font, font_scale, text_color, font_thickness)
+
+    return text_size
+
+def filter_by_area(img, texts, boxes, scores, recs):
+    noisy_text = ["sale", "cafe", "harajuku"]
+    fl_boxes, fl_texts, fl_scores, fl_recs = [], [], [],[]
+    for i in range(len(boxes)):
+        if texts[i].lower() in noisy_text:
+            continue
+        boxes[i] = boxes[i].tolist() if not isinstance(boxes[i], list) else boxes[i]
+        area_score = (polygon_area(boxes[i])/img.size)*1000
+        if area_score >= 0.1:
+            fl_boxes.append(boxes[i])
+            fl_texts.append(texts[i])
+            fl_scores.append(scores[i])
+            fl_recs.append(recs[i])
+    assert len(fl_texts) == len(fl_boxes) == len(fl_scores) == len(fl_recs)
+    return fl_texts, fl_boxes, fl_scores, fl_recs

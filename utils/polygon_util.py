@@ -1,6 +1,4 @@
 
-
-
 def polygon_area(points):
     n = len(points) # of corners
     area = 0.0
